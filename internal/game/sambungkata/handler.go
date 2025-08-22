@@ -10,15 +10,15 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type wordHandler struct {
+type WordHandler struct {
 	wordService Service
 }
 
-func NewHandler(wordService Service) *wordHandler {
-	return &wordHandler{wordService}
+func NewHandler(wordService Service) *WordHandler {
+	return &WordHandler{wordService}
 }
 
-func (h *wordHandler) ShowAllWord(ctx *gin.Context) {
+func (h *WordHandler) ShowAllWord(ctx *gin.Context) {
 	word, err := h.wordService.FindAll()
 	if err != nil {
 		ctx.JSON(ctx.Request.Response.StatusCode, gin.H{
@@ -31,7 +31,7 @@ func (h *wordHandler) ShowAllWord(ctx *gin.Context) {
 	})
 }
 
-func (h *wordHandler) ShowWord(ctx *gin.Context) {
+func (h *WordHandler) ShowWord(ctx *gin.Context) {
 	id := ctx.Param("id")
 	word, err := h.wordService.FindById(id)
 
@@ -47,7 +47,7 @@ func (h *wordHandler) ShowWord(ctx *gin.Context) {
 	})
 }
 
-func (h *wordHandler) GetTodayWord(ctx *gin.Context) {
+func (h *WordHandler) GetTodayWord(ctx *gin.Context) {
 	word, err := h.wordService.FindTodayWord()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -61,7 +61,7 @@ func (h *wordHandler) GetTodayWord(ctx *gin.Context) {
 	})
 }
 
-func (h *wordHandler) CheckingWord(ctx *gin.Context) {
+func (h *WordHandler) CheckingWord(ctx *gin.Context) {
 	var nextWordRequest NextWordRequest
 	err := ctx.ShouldBindBodyWithJSON(&nextWordRequest)
 	if err != nil {
@@ -122,7 +122,7 @@ func (h *wordHandler) CheckingWord(ctx *gin.Context) {
 	// fmt.Println(word)
 }
 
-func (h *wordHandler) StoreWord(ctx *gin.Context) {
+func (h *WordHandler) StoreWord(ctx *gin.Context) {
 	var wordRequest WordRequest
 
 	err := ctx.ShouldBindBodyWithJSON(&wordRequest)
