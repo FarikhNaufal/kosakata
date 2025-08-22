@@ -1,0 +1,21 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+
+# Test binary, coverage files
+*.test
+*.out
+
+# Vendor folder
+/vendor/
+
+# Environment files
+.env
+
+# IDE/editor files
+*.vscode/
+.idea/
