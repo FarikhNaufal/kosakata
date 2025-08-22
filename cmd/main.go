@@ -40,6 +40,7 @@ func main() {
 	wordRepository := sambungkata.NewRepository(db)
 	wordService := sambungkata.NewService(wordRepository)
 	wordHandler := sambungkata.NewHandler(wordService)
+	
 
 	router := gin.Default()
 
