@@ -2,7 +2,6 @@ package sambungkata
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -40,7 +39,6 @@ func (s *service) FindTodayWord() (Word, error) {
 	word, err := s.repository.FindTodayWord()
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		fmt.Println("not found find today word")
 		return s.repository.FindRandomWord()
 	}
 

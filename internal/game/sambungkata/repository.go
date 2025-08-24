@@ -24,7 +24,7 @@ func NewRepository(db *gorm.DB) *repository {
 
 func (r *repository) FindAll() ([]Word, error) {
 	var word []Word
-	err := r.db.Raw("SELECT * FROM words").Scan(&word).Error
+	err := r.db.Raw("SELECT * FROM words ORDER BY release_at DESC").Scan(&word).Error
 
 	return word, err
 }
@@ -32,13 +32,14 @@ func (r *repository) FindAll() ([]Word, error) {
 func (r *repository) FindById(id string) (Word, error) {
 	var word Word
 	err := r.db.Raw("SELECT * FROM words WHERE id=?", id).First(&word).Error
+	// err := r.db.Exec("UPDATE words SET created_at=? WHERE id=?", "2025-08-07", id).Error
 
 	return word, err
 }
 
 func (r *repository) FindRandomWord() (Word, error) {
 	var word Word
-	err := r.db.Order("RAND()").First(&word).Error
+	err := r.db.Raw("SELECT * FROM words ORDER BY created_at ASC LIMIT 1").First(&word).Error
 
 	return word, err
 }
@@ -47,7 +48,7 @@ func (r *repository) FindTodayWord() (Word, error) {
 	var word Word
 	today := time.Now().Format("2006-01-02")
 
-	err := r.db.Raw("SELECT * FROM words WHERE release_at=?", today).First(&word).Error
+	err := r.db.Raw("SELECT * FROM words WHERE release_at=? ORDER BY created_at DESC LIMIT 1", today).First(&word).Error
 
 	return word, err
 }

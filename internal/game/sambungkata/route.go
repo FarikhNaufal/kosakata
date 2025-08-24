@@ -10,5 +10,5 @@ func RegisterRoute(group *gin.RouterGroup, h *WordHandler) {
 		GET("/:id", h.ShowWord).
 		POST("/store", h.StoreWord).
 		GET("/today", h.GetTodayWord).
-		POST("/check", h.CheckingWord)
+		POST("/check", h.CheckingNextWord)
 }

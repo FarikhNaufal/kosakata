@@ -3,6 +3,8 @@ package sambungkata
 import (
 	"encoding/json"
 	"fmt"
+	"kosakata/internal/utils/response"
+	"math"
 	"net/http"
 	"strings"
 
@@ -21,14 +23,10 @@ func NewHandler(wordService Service) *WordHandler {
 func (h *WordHandler) ShowAllWord(ctx *gin.Context) {
 	word, err := h.wordService.FindAll()
 	if err != nil {
-		ctx.JSON(ctx.Request.Response.StatusCode, gin.H{
-			"error": err,
-		})
+		response.Failed(ctx, http.StatusInternalServerError, nil)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": word,
-	})
+	response.Success(ctx, "Success", word)
 }
 
 func (h *WordHandler) ShowWord(ctx *gin.Context) {
@@ -36,32 +34,26 @@ func (h *WordHandler) ShowWord(ctx *gin.Context) {
 	word, err := h.wordService.FindById(id)
 
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
-		})
+		response.Failed(ctx, http.StatusInternalServerError, nil)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": word,
-	})
+	response.Success(ctx, "Success", word)
 }
 
 func (h *WordHandler) GetTodayWord(ctx *gin.Context) {
 	word, err := h.wordService.FindTodayWord()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		response.Failed(ctx, http.StatusInternalServerError, nil)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": word,
-	})
+	res := TodayWordDTO{
+		ID:    word.ID,
+		Start: word.Start,
+	}
+	response.Success(ctx, "Success", res)
 }
 
-func (h *WordHandler) CheckingWord(ctx *gin.Context) {
+func (h *WordHandler) CheckingNextWord(ctx *gin.Context) {
 	var nextWordRequest NextWordRequest
 	err := ctx.ShouldBindBodyWithJSON(&nextWordRequest)
 	if err != nil {
@@ -71,15 +63,13 @@ func (h *WordHandler) CheckingWord(ctx *gin.Context) {
 			errMsgs = append(errMsgs, errMsg)
 		}
 
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": errMsgs})
+		response.Failed(ctx, http.StatusBadRequest, nil, &errMsgs)
 		return
 	}
 
 	word, err := h.wordService.FindTodayWord()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		response.Failed(ctx, http.StatusInternalServerError, nil, err)
 		return
 	}
 
@@ -87,40 +77,62 @@ func (h *WordHandler) CheckingWord(ctx *gin.Context) {
 	if err := json.Unmarshal(word.List, &list); err != nil {
 		return
 	}
+
 	success := false
-	for i := 0; i < len(list)-1; i++ {
-		if nextWordRequest.PrevWord == nil {
-			if strings.EqualFold(word.Start, nextWordRequest.NextWord) {
+	prev_word := nextWordRequest.PrevWord
+	var clue string
+	progress := 0.0
+
+	if nextWordRequest.PrevWord == nil {
+		if strings.EqualFold(nextWordRequest.NextWord, list[0]) {
+			success = true
+			progress = 1 / float64(len(list)+1) * 100
+		}
+	} else {
+		for i := range list {
+			if i < len(list)-1 &&
+				strings.EqualFold(*nextWordRequest.PrevWord, list[i]) &&
+				strings.EqualFold(nextWordRequest.NextWord, list[i+1]) {
 				success = true
+				progress = float64(i+2) / float64(len(list)+1) * 100
+
+				clue = list[i+1]
+				break
 			}
-		} else {
-			for i, w := range list {
-				if strings.EqualFold(*nextWordRequest.PrevWord, w) && i+1 < len(list) && strings.EqualFold(nextWordRequest.NextWord, list[i+1]) {
+
+			if len(list)-1 == i {
+				if strings.EqualFold(nextWordRequest.NextWord, word.End) {
 					success = true
+					progress = float64(i+2) / float64(len(list)+1) * 100
 					break
 				}
+				clue = word.End
 			}
+
 		}
 	}
+
 	if !success {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"data": gin.H{
-				"prev_word": nextWordRequest.PrevWord,
-				"message":   "wrong guess",
-				"success":   success,
-			},
-		})
+		res := WrongWordDTO{
+			Clue:     []string{string(clue[0]), string(clue[len(clue)-1])},
+			Length:   len(clue),
+			PrevWord: prev_word,
+		}
+
+		msg := "Wrong next word."
+		response.Failed(ctx, http.StatusUnprocessableEntity, &msg, res)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
+	response.Success(ctx, "Success",
+		gin.H{
 			"prev_word": nextWordRequest.NextWord,
-			"success":   success,
+			"progress":  math.Round(progress*100) / 100,
 		},
-	})
+	)
 
-	// fmt.Println(word)
 }
+
+// function WordMatcher()
 
 func (h *WordHandler) StoreWord(ctx *gin.Context) {
 	var wordRequest WordRequest
@@ -133,19 +145,16 @@ func (h *WordHandler) StoreWord(ctx *gin.Context) {
 			errMsgs = append(errMsgs, errMsg)
 		}
 
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": errMsgs})
+		response.Failed(ctx, http.StatusBadRequest, nil, errMsgs)
+
 		return
 	}
 
 	word, err := h.wordService.StoreWord(wordRequest)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
-		})
+		response.Failed(ctx, http.StatusInternalServerError, nil, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": word,
-	})
+	response.Success(ctx, "Success", word)
 }
