@@ -104,28 +104,30 @@ func MatchingWord(list []string, nextWordRequest NextWordRequest, word Word) (re
 
 	if nextWordRequest.PrevWord == nil {
 		res.Position = CheckWordPosition(nextWordRequest.NextWord, list[0])
+		res.Clue = list[0]
 		if strings.EqualFold(nextWordRequest.NextWord, list[0]) {
 			res.Success = true
 			res.Progress = 1 / float64(len(list)+1) * 100
 		}
 	} else {
+		res.Clue = word.End
 		for i := range list {
-			// res.Position = CheckWordPosition(nextWordRequest.NextWord, list[i+1])
-			res.Clue = list[i]
 			if i < len(list)-1 {
+				res.Position = CheckWordPosition(nextWordRequest.NextWord, list[i+1])
 				if strings.EqualFold(*nextWordRequest.PrevWord, list[i]) &&
 					strings.EqualFold(nextWordRequest.NextWord, list[i+1]) {
+						// kondisi cocok
 					res.Success = true
 					res.Progress = float64(i+2) / float64(len(list)+1) * 100
-
+					res.Clue = list[i]
 					break
 				}
 			}
 
 			if len(list)-1 == i {
-				// res.Position = CheckWordPosition(nextWordRequest.NextWord, word.End)
-				res.Clue = word.End
+				res.Position = CheckWordPosition(nextWordRequest.NextWord, word.End)	
 				if strings.EqualFold(nextWordRequest.NextWord, word.End) {
+					// kondisi cocok
 					res.Success = true
 					res.Progress = float64(i+2) / float64(len(list)+1) * 100
 					break
@@ -168,12 +170,13 @@ func (h *WordHandler) CheckingNextWord(ctx *gin.Context) {
 	matcher, err := MatchingWord(list, nextWordRequest, word)
 	if err != nil {
 		response.Failed(ctx, http.StatusInternalServerError, nil, err)
+		return
 	}
 
 	if !matcher.Success {
 		res := WrongWordDTO{
 			// Clue:     []string{string(matcher.Clue[0])},
-			Clue:     []string{matcher.Clue},
+			Clue:     []string{string(matcher.Clue[0])},
 			Length:   len(matcher.Clue),
 			PrevWord: nextWordRequest.PrevWord,
 			Position: matcher.Position,

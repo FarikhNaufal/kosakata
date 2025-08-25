@@ -14,7 +14,7 @@ func main() {
 	db, err := database.InitDB()
 	
 	if err != nil {
-		log.Fatal("Failed load db.")
+		log.Fatal(err.Error())
 	}
 
 	err = db.AutoMigrate(&sambungkata.Word{})
