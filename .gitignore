@@ -15,6 +15,7 @@
 
 # Environment files
 .env
+go.mod
 
 # IDE/editor files
 *.vscode/
