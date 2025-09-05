@@ -1,7 +1,6 @@
 package sambungkata
 
 import (
-
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

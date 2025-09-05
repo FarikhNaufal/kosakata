@@ -1,0 +1,30 @@
+basePath: /
+definitions:
+  sambungkata.TodayWordDTO:
+    properties:
+      id:
+        type: string
+      start:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the Kosakata API server.
+  title: Kosakata API
+  version: "1.0"
+paths:
+  /word/today/{id}:
+    get:
+      description: Mengambil kata yang digunakan untuk hari ini
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sambungkata.TodayWordDTO'
+      summary: Get today's word
+      tags:
+      - Words
+swagger: "2.0"

@@ -1,0 +1,46 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the Kosakata API server.",
+        "title": "Kosakata API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/word/today/{id}": {
+            "get": {
+                "description": "Mengambil kata yang digunakan untuk hari ini",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Words"
+                ],
+                "summary": "Get today's word",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sambungkata.TodayWordDTO"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "sambungkata.TodayWordDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

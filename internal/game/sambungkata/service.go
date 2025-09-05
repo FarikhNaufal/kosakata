@@ -11,7 +11,7 @@ type Service interface {
 	FindAll() ([]Word, error)
 	FindById(ID string) (Word, error)
 	FindRandomWord() (Word, error)
-	FindTodayWord() (Word, error)
+	FindTodayWord(id string) (Word, error)
 	StoreWord(wordRequest WordRequest)(Word, error)
 }
 
@@ -35,11 +35,11 @@ func (s *service) FindRandomWord() (Word, error) {
 	return s.repository.FindRandomWord()
 }
 
-func (s *service) FindTodayWord() (Word, error) {
+func (s *service) FindTodayWord(id string) (Word, error) {
 	word, err := s.repository.FindTodayWord()
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return s.repository.FindRandomWord()
+		return s.repository.FindById(id)
 	}
 
 	return word, err

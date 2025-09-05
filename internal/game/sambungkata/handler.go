@@ -40,8 +40,16 @@ func (h *WordHandler) ShowWord(ctx *gin.Context) {
 	response.Success(ctx, "Success", word)
 }
 
+// GetTodayWord godoc
+// @Summary      Get today's word
+// @Description  Mengambil kata yang digunakan untuk hari ini
+// @Tags         Words
+// @Produce      json
+// @Success      200  {object}  TodayWordDTO
+// @Router       /word/today/{id} [get]
 func (h *WordHandler) GetTodayWord(ctx *gin.Context) {
-	word, err := h.wordService.FindTodayWord()
+	id := ctx.Param("id")
+	word, err := h.wordService.FindTodayWord(id)
 	if err != nil {
 		response.Failed(ctx, http.StatusInternalServerError, nil)
 		return
@@ -57,15 +65,16 @@ type CheckWord struct {
 	Success  bool
 	Clue     string
 	Progress float64
-	Position []int
+	Position []WordPosition
 }
 
-// type WordPosition struct {
-// 	Position []int
-// 	Color string
-// }
+type WordPosition struct {
+	Position int    `json:"position"`
+	Color    string `json:"color"`
+	Char     string `json:"char"`
+}
 
-func CheckWordPosition(word, answer string) []int {
+func CheckWordPosition(word, answer string) (wp []WordPosition) {
 	maxLen := len(word)
 	if len(answer) > maxLen {
 		maxLen = len(answer)
@@ -95,7 +104,25 @@ func CheckWordPosition(word, answer string) []int {
 		}
 	}
 
-	return result
+	colorMap := map[int]string{
+		0: "#FF8B94", // salah (error)
+		1: "#A8E6CF", // benar (success)
+		2: "#FFD3B6", // ada tapi di posisi beda (warning)
+	}
+
+	for i, val := range result {
+		char := "?"
+		if i < len(word) {
+			char = string(word[i])
+		}
+		wp = append(wp, WordPosition{
+			Position: val,
+			Color:    colorMap[val],
+			Char:     char,
+		})
+	}
+
+	return wp
 }
 
 func MatchingWord(list []string, nextWordRequest NextWordRequest, word Word) (res CheckWord, error error) {
@@ -110,22 +137,11 @@ func MatchingWord(list []string, nextWordRequest NextWordRequest, word Word) (re
 			res.Progress = 1 / float64(len(list)+1) * 100
 		}
 	} else {
-		res.Clue = word.End
 		for i := range list {
-			if i < len(list)-1 {
-				res.Position = CheckWordPosition(nextWordRequest.NextWord, list[i+1])
-				if strings.EqualFold(*nextWordRequest.PrevWord, list[i]) &&
-					strings.EqualFold(nextWordRequest.NextWord, list[i+1]) {
-						// kondisi cocok
-					res.Success = true
-					res.Progress = float64(i+2) / float64(len(list)+1) * 100
-					res.Clue = list[i]
-					break
-				}
-			}
-
 			if len(list)-1 == i {
-				res.Position = CheckWordPosition(nextWordRequest.NextWord, word.End)	
+				res.Clue = word.End
+				res.Progress = float64(i+1) / float64(len(list)+1) * 100
+				res.Position = CheckWordPosition(nextWordRequest.NextWord, word.End)
 				if strings.EqualFold(nextWordRequest.NextWord, word.End) {
 					// kondisi cocok
 					res.Success = true
@@ -134,6 +150,20 @@ func MatchingWord(list []string, nextWordRequest NextWordRequest, word Word) (re
 				}
 			}
 
+			if i < len(list)-1 {
+				res.Position = CheckWordPosition(nextWordRequest.NextWord, list[i+1])
+				res.Progress = float64(i+1) / float64(len(list)+1) * 100
+				if strings.EqualFold(*nextWordRequest.PrevWord, list[i]) &&
+					strings.EqualFold(nextWordRequest.NextWord, list[i+1]) {
+					// kondisi cocok
+					res.Success = true
+					res.Progress = float64(i+2) / float64(len(list)+1) * 100
+					break
+				} else if strings.EqualFold(*nextWordRequest.PrevWord, list[i]) {
+					res.Clue = list[i+1]
+					break
+				}
+			}
 		}
 	}
 
@@ -155,7 +185,7 @@ func (h *WordHandler) CheckingNextWord(ctx *gin.Context) {
 		return
 	}
 
-	word, err := h.wordService.FindTodayWord()
+	word, err := h.wordService.FindTodayWord(nextWordRequest.ID)
 	if err != nil {
 		response.Failed(ctx, http.StatusInternalServerError, nil, err)
 		return
@@ -179,7 +209,8 @@ func (h *WordHandler) CheckingNextWord(ctx *gin.Context) {
 			Clue:     []string{string(matcher.Clue[0])},
 			Length:   len(matcher.Clue),
 			PrevWord: nextWordRequest.PrevWord,
-			Position: matcher.Position,
+			Details:  matcher.Position,
+			Progress: matcher.Progress,
 		}
 
 		msg := "Wrong next word."

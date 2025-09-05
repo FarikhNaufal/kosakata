@@ -15,4 +15,5 @@ type WordRequest struct {
 type NextWordRequest struct {
 	PrevWord *string `json:"prev_word"`
 	NextWord string  `json:"next_word" binding:"required"`
+	ID string `json:"id"`
 }

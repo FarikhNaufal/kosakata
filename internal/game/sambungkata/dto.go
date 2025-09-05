@@ -6,8 +6,9 @@ type TodayWordDTO struct {
 }
 
 type WrongWordDTO struct {
-	Clue     []string `json:"clue"`
-	Length   int      `json:"length"`
-	PrevWord *string  `json:"prev_word"`
-	Position []int    `json:"position"`
+	Clue     []string       `json:"clue"`
+	Length   int            `json:"length"`
+	PrevWord *string        `json:"prev_word"`
+	Details  []WordPosition `json:"details"`
+	Progress float64        `json:"progress"`
 }
